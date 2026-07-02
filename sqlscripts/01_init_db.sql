@@ -23,3 +23,11 @@ CREATE DATABASE DataWarehouse;
 -- Step 3: Set the context to the newly created database for subsequent operations
 USE DataWarehouse;
 
+-- =====================================================
+-- INITIAL SERVER SETUP
+-- Run once before executing the project
+-- =====================================================
+
+SET GLOBAL local_infile = 1;
+
+SHOW GLOBAL VARIABLES LIKE 'local_infile';
