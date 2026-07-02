@@ -54,4 +54,3 @@ CREATE TABLE bronze_erp_px_cat_g1v2(
 
 
 
-
