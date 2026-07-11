@@ -1,0 +1,65 @@
+-- crm_cust_info table
+TRUNCATE TABLE silver_crm_cust_info;
+INSERT INTO silver_crm_cust_info(
+	cst_id, 
+	cst_key, 
+	cst_firstname, 
+	cst_lastname, 
+	cst_marital_status, 
+	cst_gndr, 
+	cst_create_date
+)
+SELECT 
+	cst_id, 
+	cst_key,
+	TRIM(cst_firstname) as cst_firstname, -- removed unwanted spaces using TRIM()
+	TRIM(cst_lastname) as cst_lastname,
+	CASE 
+	WHEN UPPER(TRIM(cst_marital_status)) = 'M' THEN 'Married'    -- standardized the data by replacing abbv with a clear data
+	WHEN UPPER(TRIM(cst_marital_status)) = 'S' THEN 'Single'
+	ELSE 'N/A'
+	END as cst_marital_status, -- normalize marital status to readable format
+	CASE 
+	WHEN UPPER(TRIM(cst_gndr)) = 'M' THEN 'Male'
+	WHEN UPPER(TRIM(cst_gndr)) = 'F' THEN 'Female'
+	ELSE 'N/A'
+	END as cst_gndr,
+	cst_create_date
+FROM(
+	SELECT *, ROW_NUMBER() OVER(PARTITION BY cst_id ORDER BY cst_create_date desc) as latest_id
+	from bronze_crm_cust_info
+	WHERE cst_id IS NOT NULL
+) as no_null
+WHERE latest_id = 1; -- select the latest record per person
+
+
+-- crm_prd_info table
+TRUNCATE TABlE silver_crm_prd_info;
+INSERT INTO silver_crm_prd_info(
+	prd_id,
+    cat_id,
+    prd_key,
+    prd_nm,
+    prd_cost,
+    prd_line,
+    prd_start_dt,
+    prd_end_dt
+)
+SELECT 
+prd_id, 
+REPLACE(SUBSTRING(prd_key,1,5),'-', '_') AS cat_id, -- extract category id from prd_key
+SUBSTRING(prd_key,7) AS prd_key, -- extract product id
+prd_nm,
+IFNULL(prd_cost, 0) as prd_cost,
+CASE UPPER(TRIM(prd_line))
+WHEN 'M' THEN 'Mountain'
+WHEN 'R' THEN 'Road'
+WHEN 'S' THEN 'Other Sales'
+WHEN 'T' THEN 'Touring'
+ELSE 'N/A'
+END AS prd_line, -- convert abbreviations to readable format
+CAST(prd_start_dt AS DATE) AS prd_start_dt,
+-- to ensure start date never comes after end date
+-- calculate end date as one day before the next start date
+LEAD(CAST(prd_start_dt AS DATE)) OVER (PARTITION BY prd_key ORDER BY CAST(prd_start_dt AS DATE)) - INTERVAL 1 DAY AS prd_end_dt
+FROM bronze_crm_prd_info;
