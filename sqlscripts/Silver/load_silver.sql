@@ -1,3 +1,5 @@
+# Execution method : CALL load_silver();
+
 DELIMITER $$
 DROP PROCEDURE IF EXISTS load_silver $$
 CREATE PROCEDURE load_silver()
