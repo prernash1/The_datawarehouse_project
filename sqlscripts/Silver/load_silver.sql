@@ -1,4 +1,4 @@
-# Execution method : CALL load_silver();
+# Usage method : CALL load_silver();
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS load_silver $$
